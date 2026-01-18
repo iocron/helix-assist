@@ -21,10 +21,8 @@ type CodeActionCommand struct {
 // Commands available for code actions.
 var Commands = []CodeActionCommand{
 	{Key: "resolveDiagnostics", Label: "Resolve diagnostics", Query: "Resolve the diagnostics for this code."},
-	{Key: "generateDocs", Label: "Generate documentation", Query: "Add documentation to this code."},
 	{Key: "improveCode", Label: "Improve code", Query: "Improve this code."},
 	{Key: "refactorFromComment", Label: "Refactor code from a comment", Query: "Refactor this code based on the comment."},
-	{Key: "writeTest", Label: "Write a unit test", Query: "Write a unit test for this code. Do not include any imports."},
 }
 
 func CommandKeys() []string {
