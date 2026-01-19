@@ -71,7 +71,6 @@ func (h *CompletionHandler) doCompletion(svc *lsp.Service, msg *lsp.JSONRPCMessa
 
 	if buffer.Version > lastContentVersion {
 		svc.Logger.Log("skipping completion - content is stale")
-		svc.ResetDiagnostics()
 		h.sendEmptyCompletion(svc, msg.ID)
 		return
 	}
@@ -79,26 +78,14 @@ func (h *CompletionHandler) doCompletion(svc *lsp.Service, msg *lsp.JSONRPCMessa
 	content = util.GetContent(buffer.Text, params.Position.Line, params.Position.Character)
 	svc.Logger.Log("calling completion", "language:", buffer.LanguageID)
 
-	diagRange := lsp.Range{
-		Start: lsp.Position{Line: params.Position.Line, Character: 0},
-		End:   lsp.Position{Line: params.Position.Line + 1, Character: 0},
-	}
-
 	var progress *util.ProgressIndicator
 
 	if h.cfg.EnableProgressSpinner {
-		progress = util.NewProgressIndicator(svc, h.cfg, diagRange, h.cfg.CompletionTimeout)
+		progress = util.NewProgressIndicator(svc, h.cfg)
 		progress.Start()
 		defer progress.Stop()
 	} else {
-		svc.SendDiagnostics([]lsp.Diagnostic{
-			{
-				Message:  "Fetching completion...",
-				Severity: lsp.SeverityInformation,
-				Range:    diagRange,
-			},
-		}, h.cfg.CompletionTimeout)
-		defer svc.ResetDiagnostics()
+		svc.SendShowMessage(lsp.MessageTypeInfo, "Fetching completion...")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(h.cfg.CompletionTimeout)*time.Millisecond)
@@ -120,7 +107,7 @@ func (h *CompletionHandler) doCompletion(svc *lsp.Service, msg *lsp.JSONRPCMessa
 					End:   lsp.Position{Line: params.Position.Line + 1, Character: 0},
 				},
 			},
-		}, h.cfg.CompletionTimeout)
+		}, 0)
 		return
 	}
 
@@ -139,8 +126,6 @@ func (h *CompletionHandler) doCompletion(svc *lsp.Service, msg *lsp.JSONRPCMessa
 			Items:        items,
 		},
 	})
-
-	svc.ResetDiagnostics()
 }
 
 func (h *CompletionHandler) buildCompletionItem(hint string, content util.ContentParts, position lsp.Position) lsp.CompletionItem {
