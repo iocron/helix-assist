@@ -32,24 +32,34 @@ func main() {
 		openaiProvider := providers.NewOpenAIProvider(
 			cfg.OpenAIKey,
 			cfg.OpenAIModel,
+			cfg.OpenAIModelForChat,
 			cfg.OpenAIEndpoint,
 			cfg.FetchTimeout,
 			logger,
 		)
 		registry.Register("openai", openaiProvider)
-		logger.Log("Registered OpenAI provider", "model:", cfg.OpenAIModel)
+		chatModel := cfg.OpenAIModelForChat
+		if chatModel == "" {
+			chatModel = cfg.OpenAIModel
+		}
+		logger.Log("Registered OpenAI provider", "completion model:", cfg.OpenAIModel, "chat model:", chatModel)
 	}
 
 	if cfg.AnthropicKey != "" {
 		anthropicProvider := providers.NewAnthropicProvider(
 			cfg.AnthropicKey,
 			cfg.AnthropicModel,
+			cfg.AnthropicModelForChat,
 			cfg.AnthropicEndpoint,
 			cfg.FetchTimeout,
 			logger,
 		)
 		registry.Register("anthropic", anthropicProvider)
-		logger.Log("Registered Anthropic provider", "model:", cfg.AnthropicModel)
+		chatModel := cfg.AnthropicModelForChat
+		if chatModel == "" {
+			chatModel = cfg.AnthropicModel
+		}
+		logger.Log("Registered Anthropic provider", "completion model:", cfg.AnthropicModel, "chat model:", chatModel)
 	}
 
 	if err := registry.SetCurrent(cfg.Handler); err != nil {
