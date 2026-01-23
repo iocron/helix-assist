@@ -32,7 +32,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Handler:                "openai",
-		OpenAIModel:            "gpt-4.1-mini",
+		OpenAIModel:            "gpt-4.1",
 		OpenAIModelForChat:     "gpt-5",
 		OpenAIEndpoint:         "https://api.openai.com/v1",
 		AnthropicModel:         "claude-haiku-4-5",
