@@ -3,7 +3,7 @@
 ![Build Status](https://github.com/leona/helix-assist/actions/workflows/release.yml/badge.svg)
 ![GitHub Release](https://img.shields.io/github/v/release/leona/helix-assist)
 
-A Go port of the [helix-gpt](https://github.com/leona/helix-gpt) language server, providing LLM code completions and actions tailored specifically for the Helix editor's LSP spec. This port serves as a more efficient, lightweight alternative using significantly less memory and resolving timeout issues and inconsistencies. Support is limited to OpenAI and Anthropic, with zero external dependencies.
+A Go port of the [helix-gpt](https://github.com/leona/helix-gpt) language server, providing LLM code completions and actions tailored specifically for the Helix editor's LSP spec. This port serves as a more efficient, lightweight alternative using significantly less memory and resolving timeout issues and inconsistencies. Support is limited to OpenAI, Anthropic and Ollama, with zero external dependencies.
 
 ### Completions 
 
@@ -25,6 +25,7 @@ A Go port of the [helix-gpt](https://github.com/leona/helix-gpt) language server
 
 - **OpenAI** (default)
 - **Anthropic**
+- **Ollama**
 
 ## Installation
 
@@ -102,13 +103,15 @@ language-servers = ["pylsp", "helix-assist"]
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `HANDLER` | `openai` | Provider: `openai` or `anthropic` |
+| `HANDLER` | `openai` | Provider: `openai` or `anthropic` or `ollama` |
 | `OPENAI_API_KEY` | - | OpenAI API key |
 | `OPENAI_MODEL` | `gpt-4.1-mini` | OpenAI model for completions |
 | `OPENAI_ENDPOINT` | `https://api.openai.com/v1` | OpenAI API endpoint |
 | `ANTHROPIC_API_KEY` | - | Anthropic API key |
 | `ANTHROPIC_MODEL` | `claude-sonnet-4-5` | Anthropic model |
 | `ANTHROPIC_ENDPOINT` | `https://api.anthropic.com` | Anthropic API endpoint |
+| `OLLAMA_MODEL` | `rnj-1` | Ollama model for completions (install model: `ollama pull rnj-1:latest` All models at: https://ollama.com/library) |
+| `OLLAMA_ENDPOINT` | `http://localhost:11434` | Ollama API endpoint |
 | `DEBOUNCE` | `200` | Debounce delay in milliseconds |
 | `TRIGGER_CHARACTERS` | `{`\|\|`(`\|\|` ` | Completion triggers (separated by `\|\|`) |
 | `NUM_SUGGESTIONS` | `1` | Number of completion suggestions |

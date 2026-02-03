@@ -2,7 +2,9 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -17,6 +19,9 @@ type Config struct {
 	AnthropicModel         string
 	AnthropicModelForChat  string
 	AnthropicEndpoint      string
+	OllamaModel            string
+	OllamaModelForChat     string
+	OllamaEndpoint         string
 	Debounce               int
 	TriggerCharacters      []string
 	NumSuggestions         int
@@ -38,6 +43,9 @@ func DefaultConfig() *Config {
 		AnthropicModel:         "claude-haiku-4-5",
 		AnthropicModelForChat:  "claude-sonnet-4-5",
 		AnthropicEndpoint:      "https://api.anthropic.com",
+		OllamaModel:            "rnj-1",
+		OllamaModelForChat:     "rnj-1",
+		OllamaEndpoint:         "http://localhost:11434",
 		Debounce:               200,
 		TriggerCharacters:      []string{"{", "(", " "},
 		NumSuggestions:         1,
@@ -54,7 +62,7 @@ func Load() *Config {
 	cfg := DefaultConfig()
 
 	// Define flags
-	handler := flag.String("handler", getEnvOrDefault("HANDLER", cfg.Handler), "Provider: openai or anthropic")
+	handler := flag.String("handler", getEnvOrDefault("HANDLER", cfg.Handler), "Provider: openai, anthropic, or ollama")
 	openaiKey := flag.String("openai-key", getEnvOrDefault("OPENAI_API_KEY", ""), "OpenAI API key")
 	openaiModel := flag.String("openai-model", getEnvOrDefault("OPENAI_MODEL", cfg.OpenAIModel), "OpenAI model")
 	openaiEndpoint := flag.String("openai-endpoint", getEnvOrDefault("OPENAI_ENDPOINT", cfg.OpenAIEndpoint), "OpenAI API endpoint")
@@ -63,6 +71,9 @@ func Load() *Config {
 	anthropicEndpoint := flag.String("anthropic-endpoint", getEnvOrDefault("ANTHROPIC_ENDPOINT", cfg.AnthropicEndpoint), "Anthropic API endpoint")
 	openaiModelForChat := flag.String("openai-model-for-chat", getEnvOrDefault("OPENAI_MODEL_FOR_CHAT", cfg.OpenAIModelForChat), "OpenAI model for chat actions (defaults to openai-model)")
 	anthropicModelForChat := flag.String("anthropic-model-for-chat", getEnvOrDefault("ANTHROPIC_MODEL_FOR_CHAT", cfg.AnthropicModelForChat), "Anthropic model for chat actions (defaults to anthropic-model)")
+	ollamaModel := flag.String("ollama-model", getEnvOrDefault("OLLAMA_MODEL", cfg.OllamaModel), "Ollama model")
+	ollamaEndpoint := flag.String("ollama-endpoint", getEnvOrDefault("OLLAMA_ENDPOINT", cfg.OllamaEndpoint), "Ollama API endpoint")
+	ollamaModelForChat := flag.String("ollama-model-for-chat", getEnvOrDefault("OLLAMA_MODEL_FOR_CHAT", cfg.OllamaModelForChat), "Ollama model for chat actions (defaults to ollama-model)")
 	debounce := flag.Int("debounce", getEnvOrDefaultInt("DEBOUNCE", cfg.Debounce), "Debounce delay (ms)")
 	triggerChars := flag.String("trigger-chars", getEnvOrDefault("TRIGGER_CHARACTERS", "{||(|| "), "Completion trigger characters (separated by ||)")
 	numSuggestions := flag.Int("num-suggestions", getEnvOrDefaultInt("NUM_SUGGESTIONS", cfg.NumSuggestions), "Number of suggestions")
@@ -85,6 +96,9 @@ func Load() *Config {
 	cfg.AnthropicModel = *anthropicModel
 	cfg.AnthropicModelForChat = *anthropicModelForChat
 	cfg.AnthropicEndpoint = *anthropicEndpoint
+	cfg.OllamaModel = *ollamaModel
+	cfg.OllamaModelForChat = *ollamaModelForChat
+	cfg.OllamaEndpoint = *ollamaEndpoint
 	cfg.Debounce = *debounce
 	cfg.TriggerCharacters = strings.Split(*triggerChars, "||")
 	cfg.NumSuggestions = *numSuggestions
@@ -100,8 +114,12 @@ func Load() *Config {
 }
 
 func (c *Config) Validate() error {
-	if c.Handler != "openai" && c.Handler != "anthropic" {
-		return &ConfigError{Message: "handler must be 'openai' or 'anthropic'"}
+	validHandlers := []string{"openai", "anthropic", "ollama"}
+
+	if !slices.Contains(validHandlers, c.Handler) {
+		return &ConfigError{
+			Message: fmt.Sprintf("handler must be one of: %s", strings.Join(validHandlers, ", ")),
+		}
 	}
 
 	if c.Handler == "openai" && c.OpenAIKey == "" {
