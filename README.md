@@ -110,7 +110,7 @@ language-servers = ["pylsp", "helix-assist"]
 | `ANTHROPIC_API_KEY` | - | Anthropic API key |
 | `ANTHROPIC_MODEL` | `claude-sonnet-4-5` | Anthropic model |
 | `ANTHROPIC_ENDPOINT` | `https://api.anthropic.com` | Anthropic API endpoint |
-| `OLLAMA_MODEL` | `rnj-1` | Ollama model for completions (install model: `ollama pull rnj-1:latest` All models at: https://ollama.com/library) |
+| `OLLAMA_MODEL` | `qwen2.5-coder` | Ollama model for completions (install model: `ollama pull qwen2.5-coder:latest` All models at: https://ollama.com/library) |
 | `OLLAMA_ENDPOINT` | `http://localhost:11434` | Ollama API endpoint |
 | `DEBOUNCE` | `200` | Debounce delay in milliseconds |
 | `TRIGGER_CHARACTERS` | `{`\|\|`(`\|\|` ` | Completion triggers (separated by `\|\|`) |

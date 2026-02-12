@@ -24,6 +24,7 @@ vendor/
 build/
 dist/
 bin/
+/helix-assist
 
 # IDE and editor files
 .vscode/

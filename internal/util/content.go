@@ -98,6 +98,79 @@ func PadContent(text string, padding int) string {
 	return strings.Join(lines, "\n")
 }
 
+// GetContentIndent returns the actual whitespace prefix of the least-indented
+// non-blank line. Unlike GetContentPadding (which returns a count),
+// this preserves the original characters (tabs vs spaces).
+func GetContentIndent(text string) string {
+	lines := strings.Split(text, "\n")
+	var minIndent string
+	first := true
+
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		indent := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+		if first || len(indent) < len(minIndent) {
+			minIndent = indent
+			first = false
+		}
+	}
+	return minIndent
+}
+
+func DedentContent(text string) string {
+	indent := GetContentIndent(text)
+	if indent == "" {
+		return text
+	}
+
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		if strings.HasPrefix(line, indent) {
+			lines[i] = line[len(indent):]
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// IndentContent prepends the given prefix string to each non-blank line.
+func IndentContent(text, prefix string) string {
+	if prefix == "" {
+		return text
+	}
+
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		if strings.TrimSpace(line) != "" {
+			lines[i] = prefix + line
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+func TrimBlankLines(text string) string {
+	lines := strings.Split(text, "\n")
+
+	start := 0
+	for start < len(lines) && strings.TrimSpace(lines[start]) == "" {
+		start++
+	}
+
+	end := len(lines)
+	for end > start && strings.TrimSpace(lines[end-1]) == "" {
+		end--
+	}
+
+	if start >= end {
+		return ""
+	}
+	return strings.Join(lines[start:end], "\n")
+}
+
 func UniqueStrings(items []string) []string {
 	seen := make(map[string]bool)
 	result := make([]string, 0, len(items))

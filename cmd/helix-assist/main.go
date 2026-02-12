@@ -113,11 +113,32 @@ func main() {
 	}
 }
 
+func detectLanguage(content string) string {
+	lower := strings.ToLower(content)
+	switch {
+	case strings.Contains(content, "package ") && strings.Contains(content, "func "):
+		return "go"
+	case strings.Contains(lower, "def ") && strings.Contains(content, ":"):
+		return "python"
+	case strings.Contains(content, "fn ") && strings.Contains(content, "->"):
+		return "rust"
+	case strings.Contains(content, "function ") || strings.Contains(content, "const ") || strings.Contains(content, "let "):
+		return "javascript"
+	default:
+		return "go" // Default to Go for this project
+	}
+}
+
 func debugMode(cfg *config.Config, registry *providers.Registry, logger *lsp.Logger) {
 	ctx := context.Background()
 	logger.Log("Calling completion with query:", cfg.DebugQuery)
+
+	// Detect language from content
+	languageID := detectLanguage(cfg.DebugQuery)
+
 	fmt.Printf("Query: %s\n", cfg.DebugQuery)
 	fmt.Printf("Provider: %s\n", cfg.Handler)
+	fmt.Printf("Language: %s\n", languageID)
 	fmt.Printf("Num suggestions: %d\n", cfg.NumSuggestions)
 	fmt.Println(strings.Repeat("-", 80))
 	fmt.Println("Sending request...")
@@ -125,7 +146,7 @@ func debugMode(cfg *config.Config, registry *providers.Registry, logger *lsp.Log
 	results, err := registry.Completion(ctx, providers.CompletionRequest{
 		ContentBefore: cfg.DebugQuery,
 		ContentAfter:  "",
-	}, "debug.js", "javascript", cfg.NumSuggestions)
+	}, "debug."+languageID, languageID, cfg.NumSuggestions)
 
 	if err != nil {
 		logger.Log("Completion error:", err.Error())

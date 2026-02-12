@@ -40,6 +40,7 @@ func (p *ProgressIndicator) Start() {
 	p.startTime = time.Now()
 	p.mu.Unlock()
 
+	p.svc.Logger.Log("AI completion started")
 	go p.animate()
 }
 
@@ -49,20 +50,22 @@ func (p *ProgressIndicator) Stop() {
 	}
 
 	p.mu.Lock()
-
 	if p.cancel != nil {
 		p.cancel()
 		p.cancel = nil
 	}
-
+	elapsed := time.Since(p.startTime)
 	p.mu.Unlock()
+
+	// Show final time
+	p.svc.SendShowMessage(lsp.MessageTypeInfo, fmt.Sprintf("✓ AI completion (%s)", p.formatElapsed(elapsed)))
+	p.svc.Logger.Log(fmt.Sprintf("AI completion finished in %s", p.formatElapsed(elapsed)))
 }
 
 func (p *ProgressIndicator) animate() {
-	ticker := time.NewTicker(p.updateInterval)
+	// Update every full second (much safer than 200ms intervals)
+	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
-
-	frameIndex := 0
 
 	for {
 		select {
@@ -70,11 +73,8 @@ func (p *ProgressIndicator) animate() {
 			return
 		case <-ticker.C:
 			elapsed := time.Since(p.startTime)
-			message := fmt.Sprintf(" %s (%s)", p.spinnerFrames[frameIndex], p.formatElapsed(elapsed))
-
-			p.svc.SendShowMessage(lsp.MessageTypeInfo, message)
-
-			frameIndex = (frameIndex + 1) % len(p.spinnerFrames)
+			seconds := int(elapsed.Seconds())
+			p.svc.SendShowMessage(lsp.MessageTypeInfo, fmt.Sprintf("⏳ AI completion (%ds)", seconds))
 		}
 	}
 }

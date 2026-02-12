@@ -125,12 +125,7 @@ func (p *AnthropicProvider) Completion(ctx context.Context, req CompletionReques
 	return util.UniqueStrings(results), nil
 }
 
-func (p *AnthropicProvider) Chat(ctx context.Context, query, content, filepath, languageID string) (*ChatResponse, error) {
-	cleanFilepath := strings.TrimPrefix(filepath, "file://")
-
-	systemPrompt := BuildChatSystemPrompt(languageID)
-	userContent := BuildChatUserPrompt(languageID, cleanFilepath, content, query)
-
+func (p *AnthropicProvider) Chat(ctx context.Context, systemPrompt, userPrompt string) (*ChatResponse, error) {
 	apiReq := anthropicRequest{
 		Model:     p.chatModel,
 		MaxTokens: 8192,
@@ -142,7 +137,7 @@ func (p *AnthropicProvider) Chat(ctx context.Context, query, content, filepath, 
 		},
 		Temperature: 0.1,
 		Messages: []anthropicMessage{
-			{Role: "user", Content: userContent},
+			{Role: "user", Content: userPrompt},
 		},
 	}
 

@@ -142,6 +142,7 @@ type CompletionItem struct {
 	Detail              string     `json:"detail,omitempty"`
 	InsertText          string     `json:"insertText,omitempty"`
 	InsertTextFormat    int        `json:"insertTextFormat,omitempty"`
+	TextEdit            *TextEdit  `json:"textEdit,omitempty"`
 	SortText            string     `json:"sortText,omitempty"`
 	Preselect           bool       `json:"preselect,omitempty"`
 	AdditionalTextEdits []TextEdit `json:"additionalTextEdits,omitempty"`
@@ -187,7 +188,6 @@ type ExecuteCommandParams struct {
 
 type CommandArgument struct {
 	Range       Range    `json:"range"`
-	Query       string   `json:"query"`
 	Diagnostics []string `json:"diagnostics,omitempty"`
 }
 

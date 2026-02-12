@@ -94,6 +94,12 @@ func (s *BufferStore) GetContentFromRange(uri string, r Range) string {
 
 	endLine := r.End.Line
 
+	// Helix visual line selection sets End to {NextLine, Col 0}.
+	// Adjust so we don't include the extra line after the selection.
+	if r.End.Character == 0 && r.End.Line > r.Start.Line {
+		endLine = r.End.Line - 1
+	}
+
 	if endLine >= len(lines) {
 		endLine = len(lines) - 1
 	}

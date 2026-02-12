@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"strings"
 	"time"
 
 	"github.com/leona/helix-assist/internal/config"
@@ -15,14 +14,13 @@ import (
 type CodeActionCommand struct {
 	Key   string
 	Label string
-	Query string
 }
 
 // Commands available for code actions.
 var Commands = []CodeActionCommand{
-	{Key: "resolveDiagnostics", Label: "Resolve diagnostics", Query: "Resolve the diagnostics for this code."},
-	{Key: "improveCode", Label: "Improve code", Query: "Improve this code."},
-	{Key: "refactorFromComment", Label: "Refactor code from a comment", Query: "Refactor this code based on the comment, and remove the comment."},
+	{Key: "fixComplete", Label: "AI: Complete/Fix Code"},
+	{Key: "explainComments", Label: "AI: Explain code with comments"},
+	{Key: "codeFromComment", Label: "AI: Code from comment"},
 }
 
 func CommandKeys() []string {
@@ -74,7 +72,6 @@ func (h *ActionHandler) Register(svc *lsp.Service) {
 					Arguments: []any{
 						map[string]any{
 							"range":       params.Range,
-							"query":       cmd.Query,
 							"diagnostics": diagnosticMsgs,
 						},
 					},
@@ -126,17 +123,6 @@ func (h *ActionHandler) executeCommand(svc *lsp.Service, msg *lsp.JSONRPCMessage
 		return
 	}
 
-	query := cmdArg.Query
-
-	for _, cmd := range Commands {
-		if cmd.Key == params.Command {
-			if query == "" {
-				query = cmd.Query
-			}
-			break
-		}
-	}
-
 	currentURI := svc.Buffers.CurrentURI()
 
 	if currentURI == "" {
@@ -155,7 +141,7 @@ func (h *ActionHandler) executeCommand(svc *lsp.Service, msg *lsp.JSONRPCMessage
 	}
 
 	content := svc.Buffers.GetContentFromRange(currentURI, cmdArg.Range)
-	padding := util.GetContentPadding(content)
+	indent := util.GetContentIndent(content)
 
 	buffer, ok := svc.Buffers.Get(currentURI)
 	if !ok {
@@ -163,18 +149,34 @@ func (h *ActionHandler) executeCommand(svc *lsp.Service, msg *lsp.JSONRPCMessage
 		return
 	}
 
-	svc.Logger.Log("chat request content:", content)
-	svc.Logger.Log("chat request query:", query)
+	// Dedent content before sending to provider (provider sees clean, unindented code)
+	dedented := util.DedentContent(content)
 
-	if len(cmdArg.Diagnostics) > 0 {
-		query += "\n\nDiagnostics: " + strings.Join(cmdArg.Diagnostics, "\n- ")
-		svc.Logger.Log("chat request with diagnostics:", query)
+	svc.Logger.Log("chat request content:", dedented)
+	svc.Logger.Log("chat request command:", params.Command)
+
+	// Build action-specific prompts
+	var systemPrompt, userPrompt string
+
+	switch params.Command {
+	case "fixComplete":
+		systemPrompt = providers.BuildFixCompleteSystemPrompt(buffer.LanguageID)
+		userPrompt = providers.BuildFixCompleteUserPrompt(dedented, cmdArg.Diagnostics)
+	case "explainComments":
+		systemPrompt = providers.BuildExplainCommentsSystemPrompt(buffer.LanguageID)
+		userPrompt = providers.BuildExplainCommentsUserPrompt(dedented)
+	case "codeFromComment":
+		systemPrompt = providers.BuildCodeFromCommentSystemPrompt(buffer.LanguageID)
+		userPrompt = providers.BuildCodeFromCommentUserPrompt(dedented)
+	default:
+		svc.Logger.Log("executeCommand: unknown command:", params.Command)
+		return
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(h.cfg.ActionTimeout)*time.Millisecond)
 	defer cancel()
 
-	resp, err := h.registry.Chat(ctx, query, content, currentURI, buffer.LanguageID)
+	resp, err := h.registry.Chat(ctx, systemPrompt, userPrompt)
 	if err != nil {
 		svc.Logger.Log("chat failed:", err.Error())
 		svc.SendDiagnostics([]lsp.Diagnostic{
@@ -202,7 +204,10 @@ func (h *ActionHandler) executeCommand(svc *lsp.Service, msg *lsp.JSONRPCMessage
 		return
 	}
 
-	result := util.PadContent(strings.TrimSpace(resp.Result), padding) + "\n"
+	// Fix indentation: trim blank lines, dedent AI output, re-indent to original level
+	result := util.TrimBlankLines(resp.Result)
+	result = util.DedentContent(result)
+	result = util.IndentContent(result, indent) + "\n"
 	svc.Logger.Log("received chat result:", result)
 
 	svc.Send(&lsp.JSONRPCMessage{

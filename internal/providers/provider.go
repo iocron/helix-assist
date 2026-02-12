@@ -17,7 +17,7 @@ type ChatResponse struct {
 
 type Provider interface {
 	Completion(ctx context.Context, req CompletionRequest, filepath, languageID string, numSuggestions int) ([]string, error)
-	Chat(ctx context.Context, query, content, filepath, languageID string) (*ChatResponse, error)
+	Chat(ctx context.Context, systemPrompt, userPrompt string) (*ChatResponse, error)
 }
 
 type Registry struct {
@@ -77,10 +77,10 @@ func (r *Registry) Completion(ctx context.Context, req CompletionRequest, filepa
 	return provider.Completion(ctx, req, filepath, languageID, numSuggestions)
 }
 
-func (r *Registry) Chat(ctx context.Context, query, content, filepath, languageID string) (*ChatResponse, error) {
+func (r *Registry) Chat(ctx context.Context, systemPrompt, userPrompt string) (*ChatResponse, error) {
 	provider, err := r.Get()
 	if err != nil {
 		return nil, err
 	}
-	return provider.Chat(ctx, query, content, filepath, languageID)
+	return provider.Chat(ctx, systemPrompt, userPrompt)
 }

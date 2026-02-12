@@ -134,23 +134,14 @@ func (p *OpenAIProvider) Completion(ctx context.Context, req CompletionRequest, 
 	return util.UniqueStrings(results), nil
 }
 
-func (p *OpenAIProvider) Chat(ctx context.Context, query, content, filepath, languageID string) (*ChatResponse, error) {
-	cleanFilepath := strings.TrimPrefix(filepath, "file://")
-
-	instructions := BuildChatSystemPrompt(languageID)
-	userContent := BuildChatUserPrompt(languageID, cleanFilepath, content, query)
-
+func (p *OpenAIProvider) Chat(ctx context.Context, systemPrompt, userPrompt string) (*ChatResponse, error) {
 	respReq := responsesRequest{
 		Model:        p.chatModel,
-		Instructions: instructions,
-		Input:        userContent,
+		Instructions: systemPrompt,
+		Input:        userPrompt,
 		Store:        false,
 		ServiceTier:  "priority",
 		MaxToolCalls: 0,
-		Metadata: map[string]interface{}{
-			"language": languageID,
-			"filepath": filepath,
-		},
 	}
 
 	if isReasoningModel(p.chatModel) {

@@ -92,7 +92,8 @@ type Service struct {
 	Logger       *Logger
 	Version      string
 	handlers     map[string][]EventHandler
-	mu           sync.RWMutex
+	handlerMu    sync.RWMutex
+	writeMu      sync.Mutex
 	stdin        io.Reader
 	stdout       io.Writer
 }
@@ -169,7 +170,7 @@ func (s *Service) registerDefaultHandlers() {
 			svc.Send(&JSONRPCMessage{
 				JSONRPC: "2.0",
 				ID:      msg.ID,
-				Result:  nil,
+				Result:  map[string]any{}, // Empty map instead of nil so it's included in JSON
 			})
 		}
 	})
@@ -181,15 +182,15 @@ func (s *Service) registerDefaultHandlers() {
 }
 
 func (s *Service) On(method string, handler EventHandler) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.handlerMu.Lock()
+	defer s.handlerMu.Unlock()
 	s.handlers[method] = append(s.handlers[method], handler)
 }
 
 func (s *Service) emit(method string, msg *JSONRPCMessage) {
-	s.mu.RLock()
+	s.handlerMu.RLock()
 	handlers := s.handlers[method]
-	s.mu.RUnlock()
+	s.handlerMu.RUnlock()
 
 	for _, handler := range handlers {
 		go func(h EventHandler) {
@@ -213,10 +214,10 @@ func (s *Service) Send(msg *JSONRPCMessage) {
 	}
 
 	header := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(data))
-	s.mu.Lock()
+	s.writeMu.Lock()
 	s.stdout.Write([]byte(header))
 	s.stdout.Write(data)
-	s.mu.Unlock()
+	s.writeMu.Unlock()
 
 	s.Logger.Log("sent:", string(data))
 }

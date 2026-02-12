@@ -62,6 +62,7 @@ func main() {
 		openaiProvider := providers.NewOpenAIProvider(
 			*openaiKey,
 			*openaiModel,
+			*openaiModel, // chat model same as completion model
 			*openaiEndpoint,
 			*timeoutMs,
 			logger,
@@ -79,6 +80,7 @@ func main() {
 		anthropicProvider := providers.NewAnthropicProvider(
 			*anthropicKey,
 			*anthropicModel,
+			*anthropicModel, // chat model same as completion model
 			*anthropicEndpoint,
 			*timeoutMs,
 			logger,
