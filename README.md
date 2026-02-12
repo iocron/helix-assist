@@ -75,12 +75,11 @@ Add to `~/.config/helix/languages.toml`:
 ```toml
 [language-server.helix-assist]
 command = "helix-assist"
-# Optional
-args = ["--handler", "anthropic", "--num-suggestions", "2"]
+args = ["--handler", "ollama", "--num-suggestions", "2"] # Optional
 
 [[language]]
 name = "go"
-language-servers = ["gopls", "helix-assist"]
+language-servers = [ "helix-assist", "gopls" ]
 
 [[language]]
 name = "typescript"
